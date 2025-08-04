@@ -46,25 +46,20 @@ class MaterialBreakdownScreen extends StatefulWidget {
 }
 
 class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
-  // Helper method to format currency as AUD
   String _formatCurrency(double value) {
     return '\$${value.toStringAsFixed(2)}';
   }
 
-  // Helper method to format numbers
   String _formatNumber(double value) {
     return value.toStringAsFixed(2);
   }
 
-  // Generate PDF quote
   Future<void> _generateAndShowPdf() async {
     try {
-      // Calculate material quantities and costs
       double frBags = widget.hebelSQM / 6;
       double p400Bags = widget.foamSQM / 6;
       double acrylicBags = widget.acrylicSQM / 3;
 
-      // Labour cost calculation
       double labourRate =
           double.tryParse(widget.pricing.labourHourlyRate) ?? 0.0;
       double traderRate =
@@ -80,12 +75,10 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
 
       double totalLabourCost = labourCost + traderCost;
 
-      // Material costs
       double frBagsCost = frBags * widget.pricing.hebalPrice;
       double p400BagsCost = p400Bags * widget.pricing.foamPrice;
       double acrylicBagsCost = acrylicBags * widget.pricing.brickPrice;
 
-      // Extra features costs
       double quoinsCost =
           widget.quoins *
           (double.tryParse(widget.pricing.quoinsPerPiece) ?? 0.0);
@@ -99,8 +92,16 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
           widget.columns *
           (double.tryParse(widget.pricing.pillarsPerItem) ?? 0.0);
       double windowBandsCost =
-          widget.windowBands *
-          (double.tryParse(widget.pricing.windowPerItem) ?? 0.0);
+          widget.windowBands * widget.pricing.windowPerItem;
+      _buildSummaryRow(
+        'Total SQM:',
+        _formatNumber(
+          widget.renderSQM +
+              widget.hebelSQM +
+              widget.acrylicSQM +
+              widget.foamSQM,
+        ),
+      );
 
       double totalMaterialCost =
           frBagsCost +
@@ -117,10 +118,7 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
       double gst = (baseCost + profitAmount) * 0.10;
       double totalJobCost = baseCost + profitAmount + gst;
 
-      // Create PDF document
       final pdf = pw.Document();
-
-      // Add PDF page
       pdf.addPage(
         pw.Page(
           pageFormat: PdfPageFormat.a4,
@@ -128,7 +126,6 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
             return pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                // Header
                 pw.Center(
                   child: pw.Text(
                     'M & M RENDER',
@@ -151,8 +148,6 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
                 ),
                 pw.Divider(thickness: 1.5),
                 pw.SizedBox(height: 20),
-
-                // Customer and project info
                 pw.Row(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
@@ -190,8 +185,6 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
                   ],
                 ),
                 pw.SizedBox(height: 30),
-
-                // Quote summary
                 pw.Text(
                   'QUOTE SUMMARY',
                   style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
@@ -238,8 +231,6 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
                   ],
                 ),
                 pw.SizedBox(height: 30),
-
-                // Scope of work
                 pw.Text(
                   'SCOPE OF WORK',
                   style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
@@ -271,8 +262,6 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
                 if (widget.windowBands > 0)
                   pw.Bullet(text: 'Window bands: ${widget.windowBands} items'),
                 pw.SizedBox(height: 30),
-
-                // Terms and conditions
                 pw.Text(
                   'TERMS & CONDITIONS',
                   style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
@@ -286,8 +275,6 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
                 pw.Bullet(text: '50% deposit required to secure booking'),
                 pw.Bullet(text: 'GST included where applicable'),
                 pw.SizedBox(height: 20),
-
-                // Footer
                 pw.Divider(thickness: 1.5),
                 pw.SizedBox(height: 10),
                 pw.Center(
@@ -307,14 +294,12 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
         ),
       );
 
-      // Save PDF to temporary directory
       final output = await getTemporaryDirectory();
       final file = File(
         '${output.path}/quote_${DateTime.now().millisecondsSinceEpoch}.pdf',
       );
       await file.writeAsBytes(await pdf.save());
 
-      // Display PDF preview
       await Printing.layoutPdf(
         onLayout: (PdfPageFormat format) async => file.readAsBytes(),
       );
@@ -329,14 +314,12 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Calculate material quantities and costs
     double sandTonnes = widget.renderSQM / 35;
     double cementBags = sandTonnes * 10;
     double frBags = widget.hebelSQM / 6;
     double p400Bags = widget.foamSQM / 6;
     double acrylicBags = widget.acrylicSQM / 3;
 
-    // Labour cost calculation
     double labourRate = double.tryParse(widget.pricing.labourHourlyRate) ?? 0.0;
     double traderRate = double.tryParse(widget.pricing.traderHourlyRate) ?? 0.0;
     double minLabour = double.tryParse(widget.pricing.minLabourCost) ?? 0.0;
@@ -350,16 +333,14 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
 
     double totalLabourCost = labourCost + traderCost;
 
-    // Material costs
-    double sandCost = 0; // Placeholder
-    double cementCost = 0; // Placeholder
+    double sandCost = 0;
+    double cementCost = 0;
     double frBagsCost = frBags * widget.pricing.hebalPrice;
     double p400BagsCost = p400Bags * widget.pricing.foamPrice;
-    double acrabatchCost = 0; // Placeholder
+    double acrabatchCost = 0;
     double acrylicBagsCost = acrylicBags * widget.pricing.brickPrice;
-    double textureCost = 0; // Placeholder
+    double textureCost = 0;
 
-    // Extra features costs
     double quoinsCost =
         widget.quoins * (double.tryParse(widget.pricing.quoinsPerPiece) ?? 0.0);
     double bulkheadsCost =
@@ -371,9 +352,7 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
     double columnsCost =
         widget.columns *
         (double.tryParse(widget.pricing.pillarsPerItem) ?? 0.0);
-    double windowBandsCost =
-        widget.windowBands *
-        (double.tryParse(widget.pricing.windowPerItem) ?? 0.0);
+    double windowBandsCost = widget.windowBands * widget.pricing.windowPerItem;
 
     double totalMaterialCost =
         sandCost +
@@ -409,7 +388,6 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              // Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -442,8 +420,6 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-
-              // Quote Summary Card
               Container(
                 decoration: BoxDecoration(
                   color: const Color(0xFF550101),
@@ -463,8 +439,6 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-
-                    // Job ID and Customer
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -500,8 +474,6 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
                       ],
                     ),
                     const SizedBox(height: 12),
-
-                    // Profit percentage display
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       child: Row(
@@ -521,8 +493,6 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
                         ],
                       ),
                     ),
-
-                    // Summary Rows
                     _buildSummaryRow(
                       'Job Price (Inc. GST):',
                       _formatCurrency(totalJobCost),
@@ -553,8 +523,6 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-
-              // Material Breakdown Card
               Container(
                 decoration: BoxDecoration(
                   color: const Color(0xFF550101),
@@ -574,8 +542,6 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-
-                    // Material Table
                     Table(
                       border: TableBorder.all(color: const Color(0xFFFB3B3B)),
                       columnWidths: const {
@@ -588,7 +554,6 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
                         6: FlexColumnWidth(1),
                       },
                       children: [
-                        // Header
                         TableRow(
                           decoration: const BoxDecoration(
                             color: Color(0xFF98353F),
@@ -603,86 +568,71 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
                             _buildTableHeader('SQM'),
                           ],
                         ),
-
-                        // Sand & Cement - Sand
                         _buildMaterialRow(
                           '1',
                           'Sand & Cement',
                           'Sand (Tonnes)',
-                          sandTonnes,
-                          0.0, // Placeholder price
-                          sandCost,
-                          widget.renderSQM,
+                          _formatNumber(sandTonnes),
+                          _formatCurrency(0.0),
+                          _formatCurrency(sandCost),
+                          _formatNumber(widget.renderSQM),
                         ),
-
-                        // Sand & Cement - Cement
                         _buildMaterialRow(
                           '2',
                           'Sand & Cement',
                           'Cement (Bags)',
-                          cementBags,
-                          0.0, // Placeholder price
-                          cementCost,
-                          widget.renderSQM,
+                          _formatNumber(cementBags),
+                          _formatCurrency(0.0),
+                          _formatCurrency(cementCost),
+                          _formatNumber(widget.renderSQM),
                         ),
-
-                        // Hebel
                         _buildMaterialRow(
                           '3',
                           'Hebel',
                           'FR Bags',
-                          frBags,
-                          widget.pricing.hebalPrice,
-                          frBagsCost,
-                          widget.hebelSQM,
+                          _formatNumber(frBags),
+                          _formatCurrency(widget.pricing.hebalPrice),
+                          _formatCurrency(frBagsCost),
+                          _formatNumber(widget.hebelSQM),
                         ),
-
-                        // Foam
                         _buildMaterialRow(
                           '4',
                           'Foam',
                           'P400 Bags',
-                          p400Bags,
-                          widget.pricing.foamPrice,
-                          p400BagsCost,
-                          widget.foamSQM,
+                          _formatNumber(p400Bags),
+                          _formatCurrency(widget.pricing.foamPrice),
+                          _formatCurrency(p400BagsCost),
+                          _formatNumber(widget.foamSQM),
                         ),
-
-                        // Bulkhead
                         _buildMaterialRow(
                           '5',
                           'Bulkhead',
                           'Acrabatch (Buckets)',
-                          1.0, // Placeholder quantity
-                          0.0, // Placeholder price
-                          acrabatchCost,
-                          0.0, // Placeholder SQM
+                          _formatNumber(1.0),
+                          _formatCurrency(0.0),
+                          _formatCurrency(acrabatchCost),
+                          _formatNumber(0.0),
                         ),
-
-                        // Acrylic
                         _buildMaterialRow(
                           '6',
                           'Acrylic',
                           'Acrylic Bags',
-                          acrylicBags,
-                          widget.pricing.brickPrice,
-                          acrylicBagsCost,
-                          widget.acrylicSQM,
+                          _formatNumber(acrylicBags),
+                          _formatCurrency(widget.pricing.brickPrice),
+                          _formatCurrency(acrylicBagsCost),
+                          _formatNumber(widget.acrylicSQM),
                         ),
-
-                        // All Areas
                         _buildMaterialRow(
                           '7',
                           'All Areas',
                           'Texture',
-                          1.0, // Placeholder quantity
-                          0.0, // Placeholder price
-                          textureCost,
-                          0.0, // Placeholder SQM
+                          _formatNumber(1.0),
+                          _formatCurrency(0.0),
+                          _formatCurrency(textureCost),
+                          _formatNumber(0.0),
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 16),
                     Align(
                       alignment: Alignment.centerRight,
@@ -698,8 +648,6 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-
-              // Action Buttons
               ElevatedButton(
                 onPressed: () => _generateAndShowPdf(),
                 style: ElevatedButton.styleFrom(
@@ -748,10 +696,10 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
     String srNo,
     String substrate,
     String material,
-    double quantity,
-    double unitPrice,
-    double total,
-    double sqm,
+    String quantity,
+    String unitPrice,
+    String total,
+    String sqm,
   ) {
     return TableRow(
       decoration: const BoxDecoration(color: Color(0xFF550101)),
@@ -759,10 +707,10 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
         _buildTableCell(srNo),
         _buildTableCell(substrate),
         _buildTableCell(material),
-        _buildTableCell(_formatNumber(quantity)),
-        _buildTableCell(_formatCurrency(unitPrice)),
-        _buildTableCell(_formatCurrency(total)),
-        _buildTableCell(_formatNumber(sqm)),
+        _buildTableCell(quantity),
+        _buildTableCell(unitPrice),
+        _buildTableCell(total),
+        _buildTableCell(sqm),
       ],
     );
   }

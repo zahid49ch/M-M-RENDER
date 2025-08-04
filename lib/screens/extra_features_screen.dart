@@ -247,7 +247,7 @@ class _ExtraSectionPricesState extends State<ExtraSectionPrices> {
                     padding: const EdgeInsets.symmetric(vertical: 15),
                   ),
                   child: const Text(
-                    'NEXT : Preparation & Bulkhead',
+                    'NEXT : Get Material Breakdown',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
