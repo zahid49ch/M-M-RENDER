@@ -1,60 +1,68 @@
-// global_pricing.dart
 import 'package:flutter/material.dart';
 
 class GlobalPricing with ChangeNotifier {
-  // Existing pricing variables...
+  // Material prices
   double pricePerSqm = 0.0;
   double brickPrice = 0.0;
   double foamPrice = 0.0;
   double hebalPrice = 0.0;
   double cementSandPrice = 0.0;
-
-  // Labour rates...
+  
+  // Preparation & bulkhead prices
+  double coverTrapePerSqm = 0.0;
+  double plasticPerRoll = 0.0;
+  double windowPerItem = 0.0;
+  double prepPillarsPerItem = 0.0;
+  double expansionJointsPerItem = 0.0;
+  double cornerBeadPer3m = 0.0;
+  double sprayGluePerCan = 0.0;
+  
+  // Labour rates
   String labourHourlyRate = '0';
   String traderHourlyRate = '0';
   String minLabourCost = '0';
   String minTraderCost = '0';
-
-  // Preparation & bulkhead prices...
-  String coverTrapePerSqm = '0';
-  String plasticPerRoll = '0';
-  String windowPerItem = '0';
-  String prepPillarsPerItem = '0';
-  String expansionJointsPerItem = '0';
-  String cornerBeadPer3m = '0';
-  String sprayGluePerCan = '0';
-
-  // Extra section prices...
+  
+  // Extra features prices
   String quoinsPerPiece = '0';
   String bandsPlinthsPerLM = '0';
   String bulkHeadPerLM = '0';
   String pillarsPerItem = '0';
   String fenceTopLM = '0';
   String fenceMin = '0';
-
-  // NEW: Profit percentage (default to 20%)
+  
+  // Profit percentage
   double profitPercentage = 20.0;
 
-  // Update method for profit percentage
-  void updateProfitPercentage(double value) {
-    profitPercentage = value;
+  void updatePrepBulkheadPrices({
+    double? coverTrape,
+    double? plastic,
+    double? window,
+    double? pillars,
+    double? expansion,
+    double? cornerBead,
+    double? sprayGlue,
+  }) {
+    if (coverTrape != null) coverTrapePerSqm = coverTrape;
+    if (plastic != null) plasticPerRoll = plastic;
+    if (window != null) windowPerItem = window;
+    if (pillars != null) prepPillarsPerItem = pillars;
+    if (expansion != null) expansionJointsPerItem = expansion;
+    if (cornerBead != null) cornerBeadPer3m = cornerBead;
+    if (sprayGlue != null) sprayGluePerCan = sprayGlue;
     notifyListeners();
   }
 
-  // Existing update methods...
-  // Update methods
-  void updateRenderPrices({
-    required double pricePerSqm,
-    required double brickPrice,
-    required double foamPrice,
-    required double hebalPrice,
-    required double cementSandPrice,
+  void updateLabourRates({
+    String? labour,
+    String? trader,
+    String? minLabour,
+    String? minTrader,
   }) {
-    this.pricePerSqm = pricePerSqm;
-    this.brickPrice = brickPrice;
-    this.foamPrice = foamPrice;
-    this.hebalPrice = hebalPrice;
-    this.cementSandPrice = cementSandPrice;
+    if (labour != null) labourHourlyRate = labour;
+    if (trader != null) traderHourlyRate = trader;
+    if (minLabour != null) minLabourCost = minLabour;
+    if (minTrader != null) minTraderCost = minTrader;
     notifyListeners();
   }
 
@@ -66,44 +74,17 @@ class GlobalPricing with ChangeNotifier {
     String? fenceTop,
     String? fenceMin,
   }) {
-    quoinsPerPiece = quoins ?? quoinsPerPiece;
-    bandsPlinthsPerLM = bands ?? bandsPlinthsPerLM;
-    bulkHeadPerLM = bulkHead ?? bulkHeadPerLM;
-    pillarsPerItem = pillars ?? pillarsPerItem;
-    fenceTopLM = fenceTop ?? fenceTopLM;
-    this.fenceMin = fenceMin ?? this.fenceMin;
+    if (quoins != null) quoinsPerPiece = quoins;
+    if (bands != null) bandsPlinthsPerLM = bands;
+    if (bulkHead != null) bulkHeadPerLM = bulkHead;
+    if (pillars != null) pillarsPerItem = pillars;
+    if (fenceTop != null) fenceTopLM = fenceTop;
+    if (fenceMin != null) this.fenceMin = fenceMin;
     notifyListeners();
   }
 
-  void updatePrepBulkheadPrices({
-    String? coverTrape,
-    String? plastic,
-    String? window,
-    String? pillars,
-    String? expansion,
-    String? cornerBead,
-    String? sprayGlue,
-  }) {
-    coverTrapePerSqm = coverTrape ?? coverTrapePerSqm;
-    plasticPerRoll = plastic ?? plasticPerRoll;
-    windowPerItem = window ?? windowPerItem;
-    prepPillarsPerItem = pillars ?? prepPillarsPerItem;
-    expansionJointsPerItem = expansion ?? expansionJointsPerItem;
-    cornerBeadPer3m = cornerBead ?? cornerBeadPer3m;
-    sprayGluePerCan = sprayGlue ?? sprayGluePerCan;
-    notifyListeners();
-  }
-
-  void updateLabourRates({
-    String? labour,
-    String? trader,
-    String? minLabour,
-    String? minTrader,
-  }) {
-    labourHourlyRate = labour ?? labourHourlyRate;
-    traderHourlyRate = trader ?? traderHourlyRate;
-    minLabourCost = minLabour ?? minLabourCost;
-    minTraderCost = minTrader ?? minTraderCost;
+  void updateProfitPercentage(double value) {
+    profitPercentage = value;
     notifyListeners();
   }
 }

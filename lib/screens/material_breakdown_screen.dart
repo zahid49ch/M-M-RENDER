@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 import 'global_pricing.dart';
 
 class MaterialBreakdownScreen extends StatefulWidget {
@@ -41,23 +46,6 @@ class MaterialBreakdownScreen extends StatefulWidget {
 }
 
 class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
-  late TextEditingController _profitPercentageController;
-  double profitPercentage = 20.0; // Default profit percentage
-
-  @override
-  void initState() {
-    super.initState();
-    _profitPercentageController = TextEditingController(
-      text: profitPercentage.toStringAsFixed(0),
-    );
-  }
-
-  @override
-  void dispose() {
-    _profitPercentageController.dispose();
-    super.dispose();
-  }
-
   // Helper method to format currency as AUD
   String _formatCurrency(double value) {
     return '\$${value.toStringAsFixed(2)}';
@@ -66,6 +54,277 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
   // Helper method to format numbers
   String _formatNumber(double value) {
     return value.toStringAsFixed(2);
+  }
+
+  // Generate PDF quote
+  Future<void> _generateAndShowPdf() async {
+    try {
+      // Calculate material quantities and costs
+      double frBags = widget.hebelSQM / 6;
+      double p400Bags = widget.foamSQM / 6;
+      double acrylicBags = widget.acrylicSQM / 3;
+
+      // Labour cost calculation
+      double labourRate =
+          double.tryParse(widget.pricing.labourHourlyRate) ?? 0.0;
+      double traderRate =
+          double.tryParse(widget.pricing.traderHourlyRate) ?? 0.0;
+      double minLabour = double.tryParse(widget.pricing.minLabourCost) ?? 0.0;
+      double minTrader = double.tryParse(widget.pricing.minTraderCost) ?? 0.0;
+
+      double labourCost = widget.labourHours * labourRate;
+      if (labourCost < minLabour) labourCost = minLabour;
+
+      double traderCost = widget.traderHours * traderRate;
+      if (traderCost < minTrader) traderCost = minTrader;
+
+      double totalLabourCost = labourCost + traderCost;
+
+      // Material costs
+      double frBagsCost = frBags * widget.pricing.hebalPrice;
+      double p400BagsCost = p400Bags * widget.pricing.foamPrice;
+      double acrylicBagsCost = acrylicBags * widget.pricing.brickPrice;
+
+      // Extra features costs
+      double quoinsCost =
+          widget.quoins *
+          (double.tryParse(widget.pricing.quoinsPerPiece) ?? 0.0);
+      double bulkheadsCost =
+          widget.bulkheads *
+          (double.tryParse(widget.pricing.bulkHeadPerLM) ?? 0.0);
+      double plynthCost =
+          widget.plynth *
+          (double.tryParse(widget.pricing.bandsPlinthsPerLM) ?? 0.0);
+      double columnsCost =
+          widget.columns *
+          (double.tryParse(widget.pricing.pillarsPerItem) ?? 0.0);
+      double windowBandsCost =
+          widget.windowBands *
+          (double.tryParse(widget.pricing.windowPerItem) ?? 0.0);
+
+      double totalMaterialCost =
+          frBagsCost +
+          p400BagsCost +
+          acrylicBagsCost +
+          quoinsCost +
+          bulkheadsCost +
+          plynthCost +
+          columnsCost +
+          windowBandsCost;
+
+      double baseCost = totalMaterialCost + totalLabourCost;
+      double profitAmount = baseCost * (widget.pricing.profitPercentage / 100);
+      double gst = (baseCost + profitAmount) * 0.10;
+      double totalJobCost = baseCost + profitAmount + gst;
+
+      // Create PDF document
+      final pdf = pw.Document();
+
+      // Add PDF page
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          build: (pw.Context context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                // Header
+                pw.Center(
+                  child: pw.Text(
+                    'M & M RENDER',
+                    style: pw.TextStyle(
+                      fontSize: 24,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.red,
+                    ),
+                  ),
+                ),
+                pw.SizedBox(height: 10),
+                pw.Center(
+                  child: pw.Text(
+                    'QUOTE',
+                    style: pw.TextStyle(
+                      fontSize: 18,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                ),
+                pw.Divider(thickness: 1.5),
+                pw.SizedBox(height: 20),
+
+                // Customer and project info
+                pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(
+                            'Customer:',
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                          ),
+                          pw.Text(widget.customerName),
+                          pw.SizedBox(height: 10),
+                          pw.Text(
+                            'Project:',
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                          ),
+                          pw.Text(widget.projectName),
+                        ],
+                      ),
+                    ),
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.end,
+                        children: [
+                          pw.Text(
+                            'Date: ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
+                          ),
+                          pw.Text(
+                            'Quote #: ${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                pw.SizedBox(height: 30),
+
+                // Quote summary
+                pw.Text(
+                  'QUOTE SUMMARY',
+                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                ),
+                pw.SizedBox(height: 10),
+                pw.Table(
+                  border: pw.TableBorder.all(),
+                  columnWidths: {
+                    0: pw.FlexColumnWidth(2),
+                    1: pw.FlexColumnWidth(1),
+                  },
+                  children: [
+                    pw.TableRow(
+                      children: [
+                        pw.Padding(
+                          padding: pw.EdgeInsets.all(8),
+                          child: pw.Text('Total Price (Inc. GST):'),
+                        ),
+                        pw.Padding(
+                          padding: pw.EdgeInsets.all(8),
+                          child: pw.Text(
+                            _formatCurrency(totalJobCost),
+                            textAlign: pw.TextAlign.right,
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                    pw.TableRow(
+                      children: [
+                        pw.Padding(
+                          padding: pw.EdgeInsets.all(8),
+                          child: pw.Text('GST Included:'),
+                        ),
+                        pw.Padding(
+                          padding: pw.EdgeInsets.all(8),
+                          child: pw.Text(
+                            _formatCurrency(gst),
+                            textAlign: pw.TextAlign.right,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                pw.SizedBox(height: 30),
+
+                // Scope of work
+                pw.Text(
+                  'SCOPE OF WORK',
+                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                ),
+                pw.SizedBox(height: 10),
+                pw.Bullet(
+                  text:
+                      'Render application: ${_formatNumber(widget.renderSQM)} m²',
+                ),
+                pw.Bullet(
+                  text:
+                      'Hebel application: ${_formatNumber(widget.hebelSQM)} m²',
+                ),
+                pw.Bullet(
+                  text:
+                      'Acrylic finish: ${_formatNumber(widget.acrylicSQM)} m²',
+                ),
+                pw.Bullet(
+                  text: 'Foam application: ${_formatNumber(widget.foamSQM)} m²',
+                ),
+                if (widget.quoins > 0)
+                  pw.Bullet(text: 'Quoins: ${widget.quoins} pieces'),
+                if (widget.bulkheads > 0)
+                  pw.Bullet(text: 'Bulkheads: ${widget.bulkheads} LM'),
+                if (widget.plynth > 0)
+                  pw.Bullet(text: 'Plinths: ${widget.plynth} LM'),
+                if (widget.columns > 0)
+                  pw.Bullet(text: 'Columns: ${widget.columns} items'),
+                if (widget.windowBands > 0)
+                  pw.Bullet(text: 'Window bands: ${widget.windowBands} items'),
+                pw.SizedBox(height: 30),
+
+                // Terms and conditions
+                pw.Text(
+                  'TERMS & CONDITIONS',
+                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                ),
+                pw.SizedBox(height: 10),
+                pw.Bullet(
+                  text:
+                      'This quote is valid for 30 days from the date of issue',
+                ),
+                pw.Bullet(text: 'Payment due within 14 days of completion'),
+                pw.Bullet(text: '50% deposit required to secure booking'),
+                pw.Bullet(text: 'GST included where applicable'),
+                pw.SizedBox(height: 20),
+
+                // Footer
+                pw.Divider(thickness: 1.5),
+                pw.SizedBox(height: 10),
+                pw.Center(
+                  child: pw.Text(
+                    'Thank you for choosing M & M Render!',
+                    style: pw.TextStyle(fontStyle: pw.FontStyle.italic),
+                  ),
+                ),
+                pw.Center(
+                  child: pw.Text(
+                    'Contact: info@mmrender.com.au | Phone: (08) 7123 4567',
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      );
+
+      // Save PDF to temporary directory
+      final output = await getTemporaryDirectory();
+      final file = File(
+        '${output.path}/quote_${DateTime.now().millisecondsSinceEpoch}.pdf',
+      );
+      await file.writeAsBytes(await pdf.save());
+
+      // Display PDF preview
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => file.readAsBytes(),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to generate PDF: $e')));
+      }
+    }
   }
 
   @override
@@ -91,26 +350,30 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
 
     double totalLabourCost = labourCost + traderCost;
 
-    // Calculate costs using pricing instance
-    double sandCost = 0; // Not defined in pricing
-    double cementCost = 0; // Not defined in pricing
+    // Material costs
+    double sandCost = 0; // Placeholder
+    double cementCost = 0; // Placeholder
     double frBagsCost = frBags * widget.pricing.hebalPrice;
     double p400BagsCost = p400Bags * widget.pricing.foamPrice;
-    double acrabatchCost = 0; // Not defined in pricing
+    double acrabatchCost = 0; // Placeholder
     double acrylicBagsCost = acrylicBags * widget.pricing.brickPrice;
-    double textureCost = 0; // Not defined in pricing
+    double textureCost = 0; // Placeholder
 
-    // Calculate extra features costs
+    // Extra features costs
     double quoinsCost =
-        widget.quoins * double.parse(widget.pricing.quoinsPerPiece);
+        widget.quoins * (double.tryParse(widget.pricing.quoinsPerPiece) ?? 0.0);
     double bulkheadsCost =
-        widget.bulkheads * double.parse(widget.pricing.bulkHeadPerLM);
+        widget.bulkheads *
+        (double.tryParse(widget.pricing.bulkHeadPerLM) ?? 0.0);
     double plynthCost =
-        widget.plynth * double.parse(widget.pricing.bandsPlinthsPerLM);
+        widget.plynth *
+        (double.tryParse(widget.pricing.bandsPlinthsPerLM) ?? 0.0);
     double columnsCost =
-        widget.columns * double.parse(widget.pricing.pillarsPerItem);
+        widget.columns *
+        (double.tryParse(widget.pricing.pillarsPerItem) ?? 0.0);
     double windowBandsCost =
-        widget.windowBands * double.parse(widget.pricing.windowPerItem);
+        widget.windowBands *
+        (double.tryParse(widget.pricing.windowPerItem) ?? 0.0);
 
     double totalMaterialCost =
         sandCost +
@@ -127,13 +390,8 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
         windowBandsCost;
 
     double baseCost = totalMaterialCost + totalLabourCost;
-
-    // Calculate profit based on percentage
-    double profitAmount = baseCost * (profitPercentage / 100);
-
-    // GST calculation (10% in Australia)
+    double profitAmount = baseCost * (widget.pricing.profitPercentage / 100);
     double gst = (baseCost + profitAmount) * 0.10;
-
     double totalJobCost = baseCost + profitAmount + gst;
 
     return Scaffold(
@@ -243,51 +501,26 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
                     ),
                     const SizedBox(height: 12),
 
-                    // NEW: Profit percentage input
-                    Row(
-                      children: [
-                        const Expanded(
-                          child: Text(
-                            'Profit Percentage:',
+                    // Profit percentage display
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            'Profit Percentage: ',
                             style: TextStyle(color: Colors.white),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        SizedBox(
-                          width: 60,
-                          child: TextField(
-                            controller: _profitPercentageController,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(color: Colors.white),
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              filled: true,
-                              fillColor: const Color(0xFF731112),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(5),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFFFB3B3B),
-                                ),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                vertical: 8,
-                              ),
+                          Text(
+                            '${widget.pricing.profitPercentage.toStringAsFixed(1)}%',
+                            style: const TextStyle(
+                              color: Colors.amber,
+                              fontWeight: FontWeight.bold,
                             ),
-                            onChanged: (value) {
-                              final percentage = double.tryParse(value);
-                              if (percentage != null && percentage >= 0) {
-                                setState(() {
-                                  profitPercentage = percentage;
-                                });
-                              }
-                            },
                           ),
-                        ),
-                        const SizedBox(width: 4),
-                        const Text('%', style: TextStyle(color: Colors.white)),
-                      ],
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 12),
 
                     // Summary Rows
                     _buildSummaryRow(
@@ -299,16 +532,8 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
                       _formatCurrency(totalMaterialCost),
                     ),
                     _buildSummaryRow(
-                      'Labour Cost:',
+                      'Total Labour Cost:',
                       _formatCurrency(totalLabourCost),
-                    ),
-                    _buildSummaryRow(
-                      'Labour Hours:',
-                      '${widget.labourHours.toStringAsFixed(1)} hrs',
-                    ),
-                    _buildSummaryRow(
-                      'Trader Hours:',
-                      '${widget.traderHours.toStringAsFixed(1)} hrs',
                     ),
                     _buildSummaryRow(
                       'Total SQM:',
@@ -385,7 +610,7 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
                           'Sand & Cement',
                           'Sand (Tonnes)',
                           sandTonnes,
-                          0, // Placeholder price
+                          0.0, // Placeholder price
                           sandCost,
                           widget.renderSQM,
                         ),
@@ -396,7 +621,7 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
                           'Sand & Cement',
                           'Cement (Bags)',
                           cementBags,
-                          0, // Placeholder price
+                          0.0, // Placeholder price
                           cementCost,
                           widget.renderSQM,
                         ),
@@ -428,10 +653,10 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
                           '5',
                           'Bulkhead',
                           'Acrabatch (Buckets)',
-                          1, // Placeholder quantity
-                          0, // Placeholder price
+                          1.0, // Placeholder quantity
+                          0.0, // Placeholder price
                           acrabatchCost,
-                          0, // Placeholder SQM
+                          0.0, // Placeholder SQM
                         ),
 
                         // Acrylic
@@ -450,10 +675,10 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
                           '7',
                           'All Areas',
                           'Texture',
-                          1, // Placeholder quantity
-                          0, // Placeholder price
+                          1.0, // Placeholder quantity
+                          0.0, // Placeholder price
                           textureCost,
-                          0, // Placeholder SQM
+                          0.0, // Placeholder SQM
                         ),
                       ],
                     ),
@@ -476,15 +701,7 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
 
               // Action Buttons
               ElevatedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'PDF generation functionality coming soon!',
-                      ),
-                    ),
-                  );
-                },
+                onPressed: () => _generateAndShowPdf(),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF550101),
                   minimumSize: const Size(double.infinity, 50),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'global_pricing.dart';
+import 'preparation_bulkhead_prices.dart';
 
 class PricingPage extends StatefulWidget {
   final GlobalPricing pricing;
@@ -15,6 +16,7 @@ class _PricingPageState extends State<PricingPage> {
   late TextEditingController _foamPriceController;
   late TextEditingController _hebalPriceController;
   late TextEditingController _cementSandPriceController;
+  late TextEditingController _profitPercentageController;
 
   @override
   void initState() {
@@ -34,6 +36,9 @@ class _PricingPageState extends State<PricingPage> {
     _cementSandPriceController = TextEditingController(
       text: widget.pricing.cementSandPrice.toString(),
     );
+    _profitPercentageController = TextEditingController(
+      text: widget.pricing.profitPercentage.toString(),
+    );
   }
 
   @override
@@ -43,6 +48,7 @@ class _PricingPageState extends State<PricingPage> {
     _foamPriceController.dispose();
     _hebalPriceController.dispose();
     _cementSandPriceController.dispose();
+    _profitPercentageController.dispose();
     super.dispose();
   }
 
@@ -53,7 +59,6 @@ class _PricingPageState extends State<PricingPage> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Material(
-          // ADDED MATERIAL WIDGET HERE
           color: const Color(0xFF731112),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -73,11 +78,8 @@ class _PricingPageState extends State<PricingPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Back button
                   GestureDetector(
-                    onTap: () {
-                      Navigator.pop(context);
-                    },
+                    onTap: () => Navigator.pop(context),
                     child: const Row(
                       children: [
                         Icon(Icons.arrow_back, color: Colors.white, size: 25),
@@ -93,8 +95,6 @@ class _PricingPageState extends State<PricingPage> {
                       ],
                     ),
                   ),
-
-                  // Title
                   const Text(
                     'RENDER & Substrate Prices',
                     style: TextStyle(
@@ -165,7 +165,6 @@ class _PricingPageState extends State<PricingPage> {
                       Expanded(
                         flex: 4,
                         child: Material(
-                          // ADDED MATERIAL WIDGET HERE
                           color: const Color(0xFF550101),
                           child: TextField(
                             controller: _cementSandPriceController,
@@ -194,14 +193,33 @@ class _PricingPageState extends State<PricingPage> {
                       color: Colors.white,
                     ),
                   ),
-                  const Divider(color: Colors.white, height: 24),
                 ],
               ),
+              
+              // Profit Percentage
+              _buildPriceRow(
+                label: 'Profit Percentage',
+                controller: _profitPercentageController,
+                onChanged: (value) {
+                  final percentage = double.tryParse(value);
+                  if (percentage != null && percentage >= 0) {
+                    widget.pricing.profitPercentage = percentage;
+                  }
+                },
+                isPercentage: true,
+              ),
+
+              const Divider(color: Colors.white, height: 24),
 
               Center(
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PreparationBulkheadPrices(pricing: widget.pricing),
+                      ),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF550101),
@@ -221,7 +239,7 @@ class _PricingPageState extends State<PricingPage> {
                       letterSpacing: 1.0,
                     ),
                   ),
-                  child: const Text('SAVE PRICES'),
+                  child: const Text('NEXT: PREPARATION & BULKHEAD'),
                 ),
               ),
             ],
@@ -235,6 +253,7 @@ class _PricingPageState extends State<PricingPage> {
     required String label,
     required TextEditingController controller,
     required ValueChanged<String> onChanged,
+    bool isPercentage = false,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -254,17 +273,27 @@ class _PricingPageState extends State<PricingPage> {
           Expanded(
             flex: 4,
             child: Material(
-              // ADDED MATERIAL WIDGET HERE
               color: const Color(0xFF550101),
-              child: TextField(
-                controller: controller,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 8),
-                ),
-                onChanged: onChanged,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: controller,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(vertical: 8),
+                      ),
+                      onChanged: onChanged,
+                    ),
+                  ),
+                  if (isPercentage)
+                    const Padding(
+                      padding: EdgeInsets.only(right: 8),
+                      child: Text('%', style: TextStyle(color: Colors.white)),
+                    ),
+                ],
               ),
             ),
           ),
