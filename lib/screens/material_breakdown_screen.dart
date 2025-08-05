@@ -384,13 +384,13 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
         pw.Table(
           border: pw.TableBorder.all(),
           columnWidths: {
-            0: const pw.FlexColumnWidth(0.5),
-            1: const pw.FlexColumnWidth(1.5),
-            2: const pw.FlexColumnWidth(1.5),
-            3: const pw.FlexColumnWidth(1),
-            4: const pw.FlexColumnWidth(1),
-            5: const pw.FlexColumnWidth(1),
-            6: const pw.FlexColumnWidth(1),
+            0: const pw.FixedColumnWidth(30), // Sr. No.
+            1: const pw.FixedColumnWidth(80), // Substrate
+            2: const pw.FixedColumnWidth(80), // Material
+            3: const pw.FixedColumnWidth(60), // Quantity
+            4: const pw.FixedColumnWidth(60), // Unit Price
+            5: const pw.FixedColumnWidth(60), // Total
+            6: const pw.FixedColumnWidth(40), // SQM
           },
           children: [
             // Table header
@@ -828,13 +828,13 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
             child: Table(
               border: TableBorder.all(color: const Color(0xFFFB3B3B)),
               columnWidths: const {
-                0: FlexColumnWidth(0.5),
-                1: FlexColumnWidth(1.5),
-                2: FlexColumnWidth(1.5),
-                3: FlexColumnWidth(1),
-                4: FlexColumnWidth(1),
-                5: FlexColumnWidth(1),
-                6: FlexColumnWidth(1),
+                0: FixedColumnWidth(40), // Sr. No.
+                1: FixedColumnWidth(100), // Substrate
+                2: FixedColumnWidth(100), // Material
+                3: FixedColumnWidth(70), // Quantity
+                4: FixedColumnWidth(80), // Unit Price
+                5: FixedColumnWidth(80), // Total
+                6: FixedColumnWidth(50), // SQM
               },
               children: [
                 // Table header
