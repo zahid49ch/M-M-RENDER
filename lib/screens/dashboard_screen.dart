@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'quote_screen.dart';
 import 'pricing_screen.dart';
+import 'labour_calculation_screen.dart';
+import 'profile_screen.dart';
 import 'auth_screen.dart';
 import 'global_pricing.dart';
 
@@ -19,10 +21,11 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
-    // Initialize pages with pricing instance
     _pages = [
       QuotePage(pricing: widget.pricing),
-      PricingPage(pricing: widget.pricing),
+      PricingScreen(pricing: widget.pricing),
+      LabourCalculationScreen(pricing: widget.pricing),
+      const ProfileScreen(),
     ];
   }
 
@@ -30,11 +33,40 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'M & M RENDER',
-          style: TextStyle(color: Colors.white),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // M&M Logo in amber box
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: Colors.amber,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Text(
+                'M&M',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            // RENDER text
+            const Text(
+              'RENDER',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 24,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ],
         ),
         backgroundColor: const Color(0xFF550101),
+        centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.white),
@@ -47,22 +79,27 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
         ],
       ),
-      body: _pages[_currentIndex],
+      body: IndexedStack(index: _currentIndex, children: _pages),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
         backgroundColor: const Color(0xFF550101),
         selectedItemColor: Colors.amber,
-        unselectedItemColor: Colors.white,
+        unselectedItemColor: Colors.white70,
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
+        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal),
+        type: BottomNavigationBarType.fixed,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.description),
-            label: 'Quotes',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(
             icon: Icon(Icons.attach_money),
             label: 'Pricing',
           ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.engineering),
+            label: 'Labour',
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),
     );

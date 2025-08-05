@@ -1,221 +1,243 @@
 import 'package:flutter/material.dart';
 import 'global_pricing.dart';
+import 'quote_screen.dart'; // Make sure to import your actual screens
+import 'pricing_screen.dart';
+import 'profile_screen.dart';
 
 class LabourCalculationScreen extends StatefulWidget {
   final GlobalPricing pricing;
   const LabourCalculationScreen({super.key, required this.pricing});
 
   @override
-  State<LabourCalculationScreen> createState() => _LabourCalculationScreenState();
+  State<LabourCalculationScreen> createState() =>
+      _LabourCalculationScreenState();
 }
 
 class _LabourCalculationScreenState extends State<LabourCalculationScreen> {
-  late TextEditingController _labourController;
-  late TextEditingController _traderController;
-  late TextEditingController _minLabourController;
-  late TextEditingController _minTraderController;
+  final _formKey = GlobalKey<FormState>();
+  late final List<TextEditingController> _controllers;
+  int _currentIndex = 2; // Labour screen is index 2
 
   @override
   void initState() {
     super.initState();
-    _labourController = TextEditingController(text: widget.pricing.labourHourlyRate);
-    _traderController = TextEditingController(text: widget.pricing.traderHourlyRate);
-    _minLabourController = TextEditingController(text: widget.pricing.minLabourCost);
-    _minTraderController = TextEditingController(text: widget.pricing.minTraderCost);
-  }
-
-  @override
-  void dispose() {
-    _labourController.dispose();
-    _traderController.dispose();
-    _minLabourController.dispose();
-    _minTraderController.dispose();
-    super.dispose();
+    _controllers = [
+      TextEditingController(text: widget.pricing.labourHourlyRate.toString()),
+      TextEditingController(text: widget.pricing.traderHourlyRate.toString()),
+      TextEditingController(text: widget.pricing.minLabourCost.toString()),
+      TextEditingController(text: widget.pricing.minTraderCost.toString()),
+    ];
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF731112),
+      appBar: AppBar(title: const Text('Labour Rules')),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Material(
-          color: const Color(0xFF731112),
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'M & M RENDER',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
-                  fontStyle: FontStyle.italic,
-                  color: Colors.white,
+              // Labour Rates
+              _buildSectionHeader('Hourly Rates'),
+              _buildLabourInput('Labour Rate (\$/hr)', _controllers[0], (v) {
+                widget.pricing.labourHourlyRate =
+                    double.tryParse(v) ?? widget.pricing.labourHourlyRate;
+              }),
+              _buildLabourInput('Trader Rate (\$/hr)', _controllers[1], (v) {
+                widget.pricing.traderHourlyRate =
+                    double.tryParse(v) ?? widget.pricing.traderHourlyRate;
+              }),
+
+              // Minimum Costs
+              _buildSectionHeader('Minimum Job Costs'),
+              _buildLabourInput('Minimum Labour Cost', _controllers[2], (v) {
+                widget.pricing.minLabourCost =
+                    double.tryParse(v) ?? widget.pricing.minLabourCost;
+              }),
+              _buildLabourInput('Minimum Trader Cost', _controllers[3], (v) {
+                widget.pricing.minTraderCost =
+                    double.tryParse(v) ?? widget.pricing.minTraderCost;
+              }),
+
+              // Rules Explanation
+              _buildSectionHeader('Calculation Rules'),
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey, width: 1.0),
+                  borderRadius: BorderRadius.circular(4.0),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Labour Cost Formula:',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text('MAX(Hours × Rate, Minimum Cost)'),
+                      SizedBox(height: 16),
+                      Text(
+                        'Estimated Days Formula:',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        '(Profit / 240) / 7\n(2 trades @ \$85 + 1 labourer @ \$70 = \$240/hr)',
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 16),
 
-              // Back Header Section
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.arrow_back, color: Colors.white, size: 25),
-                        SizedBox(width: 4),
-                        Text(
-                          'Back',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Text(
-                    'Labour Calculation & Rules',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w500,
-                      fontSize: 16,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-
-              const Divider(color: Colors.white, height: 24),
-
-              // Labour Rate Inputs
-              _buildInputRow(
-                'Labour Hourly Rate (\$/hr)',
-                _labourController,
-                (value) => widget.pricing.labourHourlyRate = value,
-              ),
-              const SizedBox(height: 16),
-
-              _buildInputRow(
-                'Trader Labour Hourly Rate (\$/hr)',
-                _traderController,
-                (value) => widget.pricing.traderHourlyRate = value,
-              ),
               const SizedBox(height: 20),
-
-              // Minimum Cost Rules
-              const Center(
-                child: Text(
-                  'Minimum Cost Rules',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: Colors.amber,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              _buildInputRow(
-                'Minimum Labour Cost',
-                _minLabourController,
-                (value) => widget.pricing.minLabourCost = value,
-              ),
-              const SizedBox(height: 16),
-
-              _buildInputRow(
-                'Minimum Trader Labour Cost',
-                _minTraderController,
-                (value) => widget.pricing.minTraderCost = value,
-              ),
-              const SizedBox(height: 24),
-
-              // Info Text
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                child: Text(
-                  'Note: These rates will be used to calculate labour costs for quotes. Minimum costs ensure small jobs remain profitable.',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontStyle: FontStyle.italic,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(height: 30),
-
-              // Save Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF550101),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  child: const Text(
-                    'SAVE LABOUR RATES',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
+              ElevatedButton(
+                onPressed: _saveAndFinish,
+                child: const Text('Save All Pricing'),
               ),
             ],
           ),
         ),
       ),
+      // Added bottom navigation bar
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          if (index != _currentIndex) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => _getScreenForIndex(index),
+              ),
+            );
+          }
+        },
+        backgroundColor: const Color(0xFF550101),
+        selectedItemColor: Colors.amber,
+        unselectedItemColor: Colors.white70,
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
+        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal),
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.attach_money),
+            label: 'Pricing',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.engineering),
+            label: 'Labour',
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+        ],
+      ),
     );
   }
 
-  Widget _buildInputRow(
+  // Added navigation method
+  Widget _getScreenForIndex(int index) {
+    switch (index) {
+      case 0:
+        return QuotePage(pricing: widget.pricing);
+      case 1:
+        return PricingScreen(pricing: widget.pricing);
+      case 2:
+        return LabourCalculationScreen(pricing: widget.pricing);
+      case 3:
+        return const ProfileScreen();
+      default:
+        return QuotePage(pricing: widget.pricing);
+    }
+  }
+
+  // Your original methods remain unchanged
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Text(
+        title,
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
+  Widget _buildLabourInput(
     String label,
     TextEditingController controller,
-    ValueChanged<String> onChanged,
+    Function(String) onChanged,
   ) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: controller,
-            onChanged: onChanged,
-            style: const TextStyle(color: Colors.white),
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: const Color(0xFF550101),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: Color(0xFFFB3B3B)),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                vertical: 14,
-                horizontal: 16,
-              ),
-              prefixText: '\$ ',
-              prefixStyle: const TextStyle(color: Colors.white),
+          Expanded(flex: 2, child: Text(label)),
+          Expanded(
+            child: TextFormField(
+              controller: controller,
+              onChanged: onChanged,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(prefixText: '\$ '),
             ),
           ),
         ],
       ),
     );
   }
+
+  void _saveAndFinish() {
+    if (_formKey.currentState!.validate()) {
+      widget.pricing.updateLabourRates(
+        labour: double.tryParse(_controllers[0].text),
+        trader: double.tryParse(_controllers[1].text),
+        minLabour: double.tryParse(_controllers[2].text),
+        minTrader: double.tryParse(_controllers[3].text),
+      );
+      Navigator.pop(context);
+    }
+  }
+}
+
+// Your original _buildInputRow function remains unchanged
+Widget _buildInputRow(
+  String label,
+  TextEditingController controller,
+  ValueChanged<String> onChanged,
+) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          onChanged: onChanged,
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: const Color(0xFF550101),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFFB3B3B)),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              vertical: 14,
+              horizontal: 16,
+            ),
+            prefixText: '\$ ',
+            prefixStyle: const TextStyle(color: Colors.white),
+          ),
+        ),
+      ],
+    ),
+  );
 }
