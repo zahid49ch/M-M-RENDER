@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'global_pricing.dart';
 import 'labour_calculation_screen.dart';
+import 'quote_screen.dart'; // Make sure to import these
+import 'profile_screen.dart'; // Make sure to import these
 
 class PricingScreen extends StatefulWidget {
   final GlobalPricing pricing;
@@ -12,6 +14,7 @@ class PricingScreen extends StatefulWidget {
 
 class _PricingScreenState extends State<PricingScreen> {
   final _formKey = GlobalKey<FormState>();
+  int _currentIndex = 1; // Pricing screen is index 1
 
   // Controllers for all pricing fields
   late final List<TextEditingController> _controllers;
@@ -41,6 +44,21 @@ class _PricingScreenState extends State<PricingScreen> {
       // Profit
       TextEditingController(text: widget.pricing.profitPercentage.toString()),
     ];
+  }
+
+  Widget _getScreenForIndex(int index) {
+    switch (index) {
+      case 0:
+        return QuotePage(pricing: widget.pricing);
+      case 1:
+        return PricingScreen(pricing: widget.pricing);
+      case 2:
+        return LabourCalculationScreen(pricing: widget.pricing);
+      case 3:
+        return const ProfileScreen();
+      default:
+        return QuotePage(pricing: widget.pricing);
+    }
   }
 
   @override
@@ -123,6 +141,37 @@ class _PricingScreenState extends State<PricingScreen> {
           ),
         ),
       ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          if (index != _currentIndex) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => _getScreenForIndex(index),
+              ),
+            );
+          }
+        },
+        backgroundColor: const Color(0xFF550101),
+        selectedItemColor: Colors.amber,
+        unselectedItemColor: Colors.white70,
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
+        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal),
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.attach_money),
+            label: 'Pricing',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.engineering),
+            label: 'Labour',
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+        ],
+      ),
     );
   }
 
@@ -174,57 +223,4 @@ class _PricingScreenState extends State<PricingScreen> {
       );
     }
   }
-}
-
-Widget _buildPriceRow({
-  required String label,
-  required TextEditingController controller,
-  required ValueChanged<String> onChanged,
-  bool isPercentage = false,
-}) {
-  return Padding(
-    padding: const EdgeInsets.only(bottom: 12),
-    child: Row(
-      children: [
-        Expanded(
-          flex: 8,
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Colors.white,
-            ),
-          ),
-        ),
-        Expanded(
-          flex: 4,
-          child: Material(
-            color: const Color(0xFF550101),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: controller,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(vertical: 8),
-                    ),
-                    onChanged: onChanged,
-                  ),
-                ),
-                if (isPercentage)
-                  const Padding(
-                    padding: EdgeInsets.only(right: 8),
-                    child: Text('%', style: TextStyle(color: Colors.white)),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
 }

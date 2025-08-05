@@ -623,8 +623,13 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
               _buildHeaderSection(),
               const SizedBox(height: 16),
 
-              // Material breakdown card - MOVED TO TOP
-              _buildMaterialBreakdownCard(),
+              // Material breakdown card - centered with proper layout
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1200),
+                  child: _buildMaterialBreakdownCard(),
+                ),
+              ),
               const SizedBox(height: 16),
 
               // Quote summary card
