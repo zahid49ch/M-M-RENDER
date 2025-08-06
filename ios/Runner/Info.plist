@@ -46,6 +46,12 @@
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<key>LSApplicationQueriesSchemes</key>
+<array>
+  <string>mailto</string>
+</array>
 	<true/>
+	<key>UIFileSharingEnabled</key>
+<true/>
 </dict>
 </plist>

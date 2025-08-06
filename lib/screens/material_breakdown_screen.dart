@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+import 'dart:typed_data';
 import 'global_pricing.dart';
+import 'package:m_m_render/services/pdf_service.dart';
+import 'quote_screen.dart';
+import 'pricing_screen.dart';
+import 'labour_calculation_screen.dart';
+import 'profile_screen.dart';
 
 class MaterialBreakdownScreen extends StatefulWidget {
   final GlobalPricing pricing;
@@ -59,16 +64,38 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
   );
   final TextEditingController _managerController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
+  late Uint8List _logoBytes;
+  bool _isLoadingLogo = true;
+
+  // Toggle controls
+  bool _includeTerms = true;
+  bool _includeScope = true;
 
   @override
   void initState() {
     super.initState();
     _dateController.text = _getCurrentDate();
+    _loadLogo();
   }
 
   String _getCurrentDate() {
     final now = DateTime.now();
     return '${now.day}/${now.month}/${now.year}';
+  }
+
+  Future<void> _loadLogo() async {
+    try {
+      final byteData = await rootBundle.load('assets/logo.png');
+      setState(() {
+        _logoBytes = byteData.buffer.asUint8List();
+        _isLoadingLogo = false;
+      });
+    } catch (e) {
+      setState(() {
+        _logoBytes = Uint8List(0);
+        _isLoadingLogo = false;
+      });
+    }
   }
 
   String _formatCurrency(double value) => '\$${value.toStringAsFixed(2)}';
@@ -129,481 +156,136 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
 
   Future<void> _generateAndShowPdf() async {
     try {
-      final pdf = pw.Document();
+      if (_isLoadingLogo) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Logo is still loading')));
+        return;
+      }
 
-      // Build PDF content
-      final content = [
-        // Header
-        _buildPdfHeader(),
-        pw.SizedBox(height: 20),
-
-        // Customer and project info
-        _buildCustomerInfo(),
-        pw.SizedBox(height: 30),
-
-        // Quote summary table
-        _buildQuoteSummaryTable(),
-        pw.SizedBox(height: 30),
-
-        // Scope of work
-        _buildScopeOfWork(),
-        pw.SizedBox(height: 30),
-
-        // Material breakdown table
-        _buildMaterialBreakdownTable(),
-        pw.SizedBox(height: 30),
-
-        // Terms & conditions
-        _buildTermsAndConditions(),
-        pw.SizedBox(height: 20),
-
-        // Manager approval
-        _buildManagerApproval(),
-        pw.SizedBox(height: 20),
-
-        // Footer
-        _buildFooter(),
-      ];
-
-      pdf.addPage(
-        pw.Page(
-          pageFormat: PdfPageFormat.a4,
-          margin: const pw.EdgeInsets.all(30),
-          build: (pw.Context context) {
-            return pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: content,
-            );
-          },
-        ),
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
       );
 
-      final output = await getTemporaryDirectory();
-      final file = File(
-        '${output.path}/quote_${DateTime.now().millisecondsSinceEpoch}.pdf',
+      final file = await PdfService.generateQuotePdf(
+        pricing: widget.pricing,
+        customerName: widget.customerName,
+        customerMobile: widget.customerMobile,
+        customerEmail: widget.customerEmail,
+        projectName: widget.projectName,
+        renderSQM: widget.renderSQM,
+        hebelSQM: widget.hebelSQM,
+        acrylicSQM: widget.acrylicSQM,
+        foamSQM: widget.foamSQM,
+        labourHours: widget.labourHours,
+        traderHours: widget.traderHours,
+        quoins: widget.quoins,
+        bulkheads: widget.bulkheads,
+        plynth: widget.plynth,
+        columns: widget.columns,
+        windowBands: widget.windowBands,
+        termsText: _termsController.text,
+        managerName: _managerController.text,
+        date: _dateController.text,
+        includeTerms: _includeTerms,
+        includeScope: _includeScope,
+        logoBytes: _logoBytes,
       );
-      await file.writeAsBytes(await pdf.save());
+
+      if (mounted) Navigator.pop(context);
 
       await Printing.layoutPdf(
         onLayout: (PdfPageFormat format) async => file.readAsBytes(),
       );
     } catch (e) {
+      if (mounted) Navigator.pop(context);
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to generate PDF: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
 
-  pw.Widget _buildPdfHeader() {
-    return pw.Center(
-      child: pw.Column(
-        children: [
-          pw.Text(
-            'M & M RENDER',
-            style: pw.TextStyle(
-              fontSize: 24,
-              fontWeight: pw.FontWeight.bold,
-              color: PdfColors.red,
-            ),
+  Future<void> _exportToEmail() async {
+    try {
+      if (_isLoadingLogo) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Logo is still loading')));
+        return;
+      }
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      final file = await PdfService.generateQuotePdf(
+        pricing: widget.pricing,
+        customerName: widget.customerName,
+        customerMobile: widget.customerMobile,
+        customerEmail: widget.customerEmail,
+        projectName: widget.projectName,
+        renderSQM: widget.renderSQM,
+        hebelSQM: widget.hebelSQM,
+        acrylicSQM: widget.acrylicSQM,
+        foamSQM: widget.foamSQM,
+        labourHours: widget.labourHours,
+        traderHours: widget.traderHours,
+        quoins: widget.quoins,
+        bulkheads: widget.bulkheads,
+        plynth: widget.plynth,
+        columns: widget.columns,
+        windowBands: widget.windowBands,
+        termsText: _termsController.text,
+        managerName: _managerController.text,
+        date: _dateController.text,
+        includeTerms: _includeTerms,
+        includeScope: _includeScope,
+        logoBytes: _logoBytes,
+      );
+
+      if (mounted) Navigator.pop(context);
+
+      await PdfService.sendEmailWithPdf(
+        pdfFile: file,
+        customerName: widget.customerName,
+        customerEmail: widget.customerEmail,
+        projectName: widget.projectName,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Quote sent successfully'),
+            backgroundColor: Colors.green,
           ),
-          pw.SizedBox(height: 10),
-          pw.Text(
-            'QUOTE',
-            style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+        );
+      }
+    } catch (e) {
+      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Email Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
           ),
-          pw.Divider(thickness: 1.5),
-        ],
-      ),
-    );
-  }
-
-  pw.Widget _buildCustomerInfo() {
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Row(
-          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-          children: [
-            pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Text(
-                  'Customer:',
-                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                ),
-                pw.Text(widget.customerName),
-                pw.SizedBox(height: 5),
-                pw.Text(
-                  'Mobile: ${widget.customerMobile}',
-                  style: pw.TextStyle(fontSize: 12),
-                ),
-                pw.Text(
-                  'Email: ${widget.customerEmail}',
-                  style: pw.TextStyle(fontSize: 12),
-                ),
-              ],
-            ),
-            pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.end,
-              children: [
-                pw.Text('Date: ${_dateController.text}'),
-                pw.Text(
-                  'Quote #: ${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}',
-                ),
-              ],
-            ),
-          ],
-        ),
-        pw.SizedBox(height: 10),
-        pw.Text(
-          'Project: ${widget.projectName}',
-          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-        ),
-      ],
-    );
-  }
-
-  pw.Widget _buildQuoteSummaryTable() {
-    return pw.Table(
-      border: pw.TableBorder.all(),
-      columnWidths: {
-        0: const pw.FlexColumnWidth(2),
-        1: const pw.FlexColumnWidth(1),
-      },
-      children: [
-        pw.TableRow(
-          children: [
-            pw.Padding(
-              padding: const pw.EdgeInsets.all(8),
-              child: pw.Text('Total Price (Inc. GST):'),
-            ),
-            pw.Padding(
-              padding: const pw.EdgeInsets.all(8),
-              child: pw.Text(
-                _formatCurrency(totalJobCost),
-                textAlign: pw.TextAlign.right,
-                style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-        pw.TableRow(
-          children: [
-            pw.Padding(
-              padding: const pw.EdgeInsets.all(8),
-              child: pw.Text('GST Included:'),
-            ),
-            pw.Padding(
-              padding: const pw.EdgeInsets.all(8),
-              child: pw.Text(
-                _formatCurrency(gst),
-                textAlign: pw.TextAlign.right,
-              ),
-            ),
-          ],
-        ),
-        pw.TableRow(
-          children: [
-            pw.Padding(
-              padding: const pw.EdgeInsets.all(8),
-              child: pw.Text('Material Cost:'),
-            ),
-            pw.Padding(
-              padding: const pw.EdgeInsets.all(8),
-              child: pw.Text(
-                _formatCurrency(totalMaterialCost),
-                textAlign: pw.TextAlign.right,
-              ),
-            ),
-          ],
-        ),
-        pw.TableRow(
-          children: [
-            pw.Padding(
-              padding: const pw.EdgeInsets.all(8),
-              child: pw.Text('Labour Cost:'),
-            ),
-            pw.Padding(
-              padding: const pw.EdgeInsets.all(8),
-              child: pw.Text(
-                _formatCurrency(totalLabourCost),
-                textAlign: pw.TextAlign.right,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  pw.Widget _buildScopeOfWork() {
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Text(
-          'SCOPE OF WORK',
-          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-        ),
-        pw.SizedBox(height: 10),
-        pw.Bullet(
-          text: 'Render application: ${_formatNumber(widget.renderSQM)} m²',
-        ),
-        pw.Bullet(
-          text: 'Hebel application: ${_formatNumber(widget.hebelSQM)} m²',
-        ),
-        pw.Bullet(
-          text: 'Acrylic finish: ${_formatNumber(widget.acrylicSQM)} m²',
-        ),
-        pw.Bullet(
-          text: 'Foam application: ${_formatNumber(widget.foamSQM)} m²',
-        ),
-        if (widget.quoins > 0)
-          pw.Bullet(text: 'Quoins: ${widget.quoins} pieces'),
-        if (widget.bulkheads > 0)
-          pw.Bullet(text: 'Bulkheads: ${widget.bulkheads} LM'),
-        if (widget.plynth > 0) pw.Bullet(text: 'Plinths: ${widget.plynth} LM'),
-        if (widget.columns > 0)
-          pw.Bullet(text: 'Columns: ${widget.columns} items'),
-        if (widget.windowBands > 0)
-          pw.Bullet(text: 'Window bands: ${widget.windowBands} items'),
-      ],
-    );
-  }
-
-  pw.Widget _buildMaterialBreakdownTable() {
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Text(
-          'MATERIAL BREAKDOWN',
-          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-        ),
-        pw.SizedBox(height: 10),
-        pw.Table(
-          border: pw.TableBorder.all(),
-          columnWidths: {
-            0: const pw.FixedColumnWidth(30), // Sr. No.
-            1: const pw.FixedColumnWidth(80), // Substrate
-            2: const pw.FixedColumnWidth(80), // Material
-            3: const pw.FixedColumnWidth(60), // Quantity
-            4: const pw.FixedColumnWidth(60), // Unit Price
-            5: const pw.FixedColumnWidth(60), // Total
-            6: const pw.FixedColumnWidth(40), // SQM
-          },
-          children: [
-            // Table header
-            pw.TableRow(
-              decoration: const pw.BoxDecoration(color: PdfColors.grey300),
-              children: [
-                _buildPdfTableCell('Sr. No.', isHeader: true),
-                _buildPdfTableCell('Substrate', isHeader: true),
-                _buildPdfTableCell('Material', isHeader: true),
-                _buildPdfTableCell('Quantity', isHeader: true),
-                _buildPdfTableCell('Unit Price', isHeader: true),
-                _buildPdfTableCell('Total', isHeader: true),
-                _buildPdfTableCell('SQM', isHeader: true),
-              ],
-            ),
-            // Data rows
-            _buildPdfMaterialRow(
-              '1',
-              'Sand & Cement',
-              'Sand (Tonnes)',
-              _formatNumber(sandTonnes),
-              _formatCurrency(0.0),
-              _formatCurrency(0.0),
-              _formatNumber(widget.renderSQM),
-            ),
-            _buildPdfMaterialRow(
-              '2',
-              'Sand & Cement',
-              'Cement (Bags)',
-              _formatNumber(cementBags),
-              _formatCurrency(0.0),
-              _formatCurrency(0.0),
-              _formatNumber(widget.renderSQM),
-            ),
-            _buildPdfMaterialRow(
-              '3',
-              'Hebel',
-              'FR Bags',
-              _formatNumber(frBags),
-              _formatCurrency(widget.pricing.hebalPrice),
-              _formatCurrency(frBagsCost),
-              _formatNumber(widget.hebelSQM),
-            ),
-            _buildPdfMaterialRow(
-              '4',
-              'Foam',
-              'P400 Bags',
-              _formatNumber(p400Bags),
-              _formatCurrency(widget.pricing.foamPrice),
-              _formatCurrency(p400BagsCost),
-              _formatNumber(widget.foamSQM),
-            ),
-            _buildPdfMaterialRow(
-              '5',
-              'Acrylic',
-              'Acrylic Bags',
-              _formatNumber(acrylicBags),
-              _formatCurrency(widget.pricing.brickPrice),
-              _formatCurrency(acrylicBagsCost),
-              _formatNumber(widget.acrylicSQM),
-            ),
-            _buildPdfMaterialRow(
-              '6',
-              'Features',
-              'Quoins',
-              widget.quoins.toString(),
-              _formatCurrency(widget.pricing.quoinsPerPiece),
-              _formatCurrency(quoinsCost),
-              '-',
-            ),
-            _buildPdfMaterialRow(
-              '7',
-              'Features',
-              'Bulkheads',
-              widget.bulkheads.toString(),
-              _formatCurrency(widget.pricing.bulkHeadPerLM),
-              _formatCurrency(bulkheadsCost),
-              '-',
-            ),
-            _buildPdfMaterialRow(
-              '8',
-              'Features',
-              'Plynths',
-              widget.plynth.toString(),
-              _formatCurrency(widget.pricing.bandsPlinthsPerLM),
-              _formatCurrency(plynthCost),
-              '-',
-            ),
-            _buildPdfMaterialRow(
-              '9',
-              'Features',
-              'Columns',
-              widget.columns.toString(),
-              _formatCurrency(widget.pricing.pillarsPerItem),
-              _formatCurrency(columnsCost),
-              '-',
-            ),
-            _buildPdfMaterialRow(
-              '10',
-              'Features',
-              'Window Bands',
-              widget.windowBands.toString(),
-              _formatCurrency(widget.pricing.windowPerItem),
-              _formatCurrency(windowBandsCost),
-              '-',
-            ),
-          ],
-        ),
-        pw.SizedBox(height: 10),
-        pw.Align(
-          alignment: pw.Alignment.centerRight,
-          child: pw.Text(
-            'Total Material Cost: ${_formatCurrency(totalMaterialCost)}',
-            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-          ),
-        ),
-      ],
-    );
-  }
-
-  pw.TableRow _buildPdfMaterialRow(
-    String srNo,
-    String substrate,
-    String material,
-    String quantity,
-    String unitPrice,
-    String total,
-    String sqm,
-  ) {
-    return pw.TableRow(
-      children: [
-        _buildPdfTableCell(srNo),
-        _buildPdfTableCell(substrate),
-        _buildPdfTableCell(material),
-        _buildPdfTableCell(quantity),
-        _buildPdfTableCell(unitPrice),
-        _buildPdfTableCell(total),
-        _buildPdfTableCell(sqm),
-      ],
-    );
-  }
-
-  pw.Widget _buildPdfTableCell(String text, {bool isHeader = false}) {
-    return pw.Padding(
-      padding: const pw.EdgeInsets.all(8),
-      child: pw.Text(
-        text,
-        textAlign: pw.TextAlign.center,
-        style: pw.TextStyle(
-          fontWeight: isHeader ? pw.FontWeight.bold : pw.FontWeight.normal,
-        ),
-      ),
-    );
-  }
-
-  pw.Widget _buildTermsAndConditions() {
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Text(
-          'TERMS & CONDITIONS',
-          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-        ),
-        pw.SizedBox(height: 10),
-        pw.Text(_termsController.text),
-      ],
-    );
-  }
-
-  pw.Widget _buildManagerApproval() {
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Text(
-          'MANAGER APPROVAL',
-          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-        ),
-        pw.SizedBox(height: 10),
-        pw.Row(
-          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-          children: [
-            pw.Text('Manager: ${_managerController.text}'),
-            pw.Text('Date: ${_dateController.text}'),
-          ],
-        ),
-        pw.SizedBox(height: 20),
-        pw.Center(child: pw.Text('Signature: _________________________')),
-      ],
-    );
-  }
-
-  pw.Widget _buildFooter() {
-    return pw.Column(
-      children: [
-        pw.Divider(thickness: 1.5),
-        pw.SizedBox(height: 10),
-        pw.Center(
-          child: pw.Text(
-            'Thank you for choosing M & M Render!',
-            style: pw.TextStyle(fontStyle: pw.FontStyle.italic),
-          ),
-        ),
-        pw.Center(
-          child: pw.Text(
-            'Contact: info@mmrender.com.au | Phone: (08) 7123 4567',
-          ),
-        ),
-      ],
-    );
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Material Breakdown'),
@@ -619,39 +301,35 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              // Header section
               _buildHeaderSection(),
               const SizedBox(height: 16),
 
-              // Material breakdown card - centered with proper layout
-              Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1200),
-                  child: _buildMaterialBreakdownCard(),
-                ),
-              ),
+              // Toggle Section
+              _buildToggleSection(isMobile),
               const SizedBox(height: 16),
 
-              // Quote summary card
               _buildQuoteSummaryCard(),
               const SizedBox(height: 16),
 
-              // Terms & Conditions
-              _buildTermsConditionsCard(),
+              _buildMaterialBreakdownCard(isMobile),
               const SizedBox(height: 16),
 
-              // Manager approval
-              _buildManagerApprovalCard(),
-              const SizedBox(height: 16),
+              if (_includeScope) _buildScopeOfWorkCard(),
+              if (_includeScope) const SizedBox(height: 16),
 
-              // Action buttons
+              if (_includeTerms) _buildTermsConditionsCard(),
+              if (_includeTerms) const SizedBox(height: 16),
+
+              if (_includeTerms) _buildManagerApprovalCard(),
+              if (_includeTerms) const SizedBox(height: 16),
+
               _buildActionButtons(),
             ],
           ),
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0, // Assuming this is the active screen
+        currentIndex: 0,
         onTap: (index) {
           Navigator.pushReplacement(
             context,
@@ -685,20 +363,81 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
   Widget _getScreenForIndex(int index, GlobalPricing pricing) {
     switch (index) {
       case 0:
-        // Return your home screen with pricing passed
-        return Container(); // Replace with actual home screen
+        return QuotePage(pricing: pricing);
       case 1:
-        // Return pricing screen
-        return Container(); // Replace with actual pricing screen
+        return PricingScreen(pricing: pricing);
       case 2:
-        // Return labour screen
-        return Container(); // Replace with actual labour screen
+        return LabourCalculationScreen(pricing: pricing);
       case 3:
-        // Return profile screen
-        return Container(); // Replace with actual profile screen
+        return const ProfileScreen();
       default:
-        return Container();
+        return QuotePage(pricing: pricing);
     }
+  }
+
+  Widget _buildToggleSection(bool isMobile) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF550101),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFFB3B3B)),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'PDF Sections',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildToggleOption(
+                  'Include Terms & Conditions',
+                  _includeTerms,
+                  (value) => setState(() => _includeTerms = value),
+                ),
+              ),
+              if (!isMobile) const SizedBox(width: 20),
+              Expanded(
+                child: _buildToggleOption(
+                  'Include Scope of Work',
+                  _includeScope,
+                  (value) => setState(() => _includeScope = value),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToggleOption(
+    String label,
+    bool value,
+    Function(bool) onChanged,
+  ) {
+    return Row(
+      children: [
+        Checkbox(
+          value: value,
+          onChanged: (val) => onChanged(val!),
+          checkColor: Colors.white,
+          activeColor: const Color(0xFFFB3B3B),
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(label, style: const TextStyle(color: Colors.white)),
+        ),
+      ],
+    );
   }
 
   Widget _buildHeaderSection() {
@@ -762,9 +501,9 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
                       color: const Color(0xFFFB3B3B),
                       borderRadius: BorderRadius.circular(5),
                     ),
-                    child: const Text(
-                      'ID250718',
-                      style: TextStyle(
+                    child: Text(
+                      'ID${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}',
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
@@ -803,7 +542,7 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
     );
   }
 
-  Widget _buildMaterialBreakdownCard() {
+  Widget _buildMaterialBreakdownCard(bool isMobile) {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF550101),
@@ -827,15 +566,8 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
             scrollDirection: Axis.horizontal,
             child: Table(
               border: TableBorder.all(color: const Color(0xFFFB3B3B)),
-              columnWidths: const {
-                0: FixedColumnWidth(40), // Sr. No.
-                1: FixedColumnWidth(100), // Substrate
-                2: FixedColumnWidth(100), // Material
-                3: FixedColumnWidth(70), // Quantity
-                4: FixedColumnWidth(80), // Unit Price
-                5: FixedColumnWidth(80), // Total
-                6: FixedColumnWidth(50), // SQM
-              },
+              columnWidths: _getColumnWidths(isMobile),
+              defaultVerticalAlignment: TableCellVerticalAlignment.middle,
               children: [
                 // Table header
                 TableRow(
@@ -844,8 +576,8 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
                     _buildTableHeader('Sr.'),
                     _buildTableHeader('Substrate'),
                     _buildTableHeader('Material'),
-                    _buildTableHeader('Quantity'),
-                    _buildTableHeader('Unit Price'),
+                    _buildTableHeader('Qty'),
+                    _buildTableHeader('Unit \$'),
                     _buildTableHeader('Total'),
                     _buildTableHeader('SQM'),
                   ],
@@ -854,7 +586,7 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
                 _buildMaterialRow(
                   '1',
                   'Sand & Cement',
-                  'Sand (Tonnes)',
+                  'Sand (T)',
                   _formatNumber(sandTonnes),
                   _formatCurrency(0.0),
                   _formatCurrency(0.0),
@@ -935,7 +667,7 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
                 _buildMaterialRow(
                   '10',
                   'Features',
-                  'Window Bands',
+                  'Win. Bands',
                   widget.windowBands.toString(),
                   _formatCurrency(widget.pricing.windowPerItem),
                   _formatCurrency(windowBandsCost),
@@ -954,6 +686,97 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
                 color: Colors.white,
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Map<int, TableColumnWidth> _getColumnWidths(bool isMobile) {
+    if (isMobile) {
+      return {
+        0: const FixedColumnWidth(32),
+        1: const FixedColumnWidth(70),
+        2: const FixedColumnWidth(70),
+        3: const FixedColumnWidth(50),
+        4: const FixedColumnWidth(60),
+        5: const FixedColumnWidth(60),
+        6: const FixedColumnWidth(40),
+      };
+    } else {
+      return {
+        0: const FixedColumnWidth(40),
+        1: const FixedColumnWidth(100),
+        2: const FixedColumnWidth(100),
+        3: const FixedColumnWidth(70),
+        4: const FixedColumnWidth(80),
+        5: const FixedColumnWidth(80),
+        6: const FixedColumnWidth(50),
+      };
+    }
+  }
+
+  Widget _buildScopeOfWorkCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF550101),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFFB3B3B)),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Scope of Work',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildScopeItem(
+                'Render application: ${_formatNumber(widget.renderSQM)} m²',
+              ),
+              _buildScopeItem(
+                'Hebel application: ${_formatNumber(widget.hebelSQM)} m²',
+              ),
+              _buildScopeItem(
+                'Acrylic finish: ${_formatNumber(widget.acrylicSQM)} m²',
+              ),
+              _buildScopeItem(
+                'Foam application: ${_formatNumber(widget.foamSQM)} m²',
+              ),
+              if (widget.quoins > 0)
+                _buildScopeItem('Quoins: ${widget.quoins} pieces'),
+              if (widget.bulkheads > 0)
+                _buildScopeItem('Bulkheads: ${widget.bulkheads} LM'),
+              if (widget.plynth > 0)
+                _buildScopeItem('Plinths: ${widget.plynth} LM'),
+              if (widget.columns > 0)
+                _buildScopeItem('Columns: ${widget.columns} items'),
+              if (widget.windowBands > 0)
+                _buildScopeItem('Window bands: ${widget.windowBands} items'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScopeItem(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('• ', style: TextStyle(color: Colors.white)),
+          Expanded(
+            child: Text(text, style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -1069,13 +892,7 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
         ),
         const SizedBox(height: 8),
         ElevatedButton(
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Email export functionality coming soon!'),
-              ),
-            );
-          },
+          onPressed: _exportToEmail,
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF550101),
             minimumSize: const Size(double.infinity, 50),
@@ -1115,24 +932,25 @@ class _MaterialBreakdownScreenState extends State<MaterialBreakdownScreen> {
 
   Widget _buildTableCell(String text) {
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       child: Text(
         text,
         textAlign: TextAlign.center,
-        style: const TextStyle(color: Colors.white),
+        style: const TextStyle(color: Colors.white, fontSize: 12),
       ),
     );
   }
 
   Widget _buildTableHeader(String text) {
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       child: Text(
         text,
         textAlign: TextAlign.center,
         style: const TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.bold,
+          fontSize: 12,
         ),
       ),
     );

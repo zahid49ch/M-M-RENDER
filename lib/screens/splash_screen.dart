@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'auth_screen.dart';
+import 'dart:math';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -58,6 +59,11 @@ class _SplashScreenState extends State<SplashScreen>
         child: AnimatedBuilder(
           animation: _controller,
           builder: (context, child) {
+            // Calculate responsive logo size
+            final screenSize = MediaQuery.of(context).size;
+            final maxLogoWidth = min(screenSize.width * 0.7, 300.0);
+            final logoHeight = maxLogoWidth * 0.25; // 2:0.5 = 4:1 ratio
+
             return Opacity(
               opacity: _opacityAnimation.value,
               child: Transform.scale(
@@ -65,35 +71,33 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Logo with gradient and shadow
-                    ShaderMask(
-                      shaderCallback: (bounds) => const LinearGradient(
-                        colors: [Colors.amber, Colors.orange],
-                      ).createShader(bounds),
-                      child: const Icon(
-                        Icons.account_tree_rounded, // Or use your custom logo
-                        size: 120,
-                        color: Colors.white,
+                    // Responsive logo container
+                    Container(
+                      width: maxLogoWidth,
+                      height: logoHeight,
+                      child: Image.asset(
+                        'assets/logo.png',
+                        fit: BoxFit.contain,
                       ),
                     ),
                     const SizedBox(height: 30),
                     // Text with animation
                     Text(
-                      'M & M RENDER',
+                      'M & M RENDER Quote App',
                       style: Theme.of(context).textTheme.headlineMedium
                           ?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 32,
-                            letterSpacing: 2.0,
-                            shadows: [
-                              const Shadow(
-                                blurRadius: 10.0,
-                                color: Colors.black45,
-                                offset: Offset(3.0, 3.0),
-                              ),
-                            ],
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: min(screenSize.width * 0.065, 32),
+                        letterSpacing: 2.0,
+                        shadows: [
+                          const Shadow(
+                            blurRadius: 10.0,
+                            color: Colors.black45,
+                            offset: Offset(3.0, 3.0),
                           ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 10),
                     // Tagline with delayed fade-in

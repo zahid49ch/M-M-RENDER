@@ -295,9 +295,9 @@ class _QuotePageState extends State<QuotePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Colors.pinkAccent[100],
       appBar: AppBar(
-        title: const Text('Create New Quote'),
+        title: const Text('M&M Render Quote App'),
         backgroundColor: const Color(0xFF550101),
         actions: [
           IconButton(
