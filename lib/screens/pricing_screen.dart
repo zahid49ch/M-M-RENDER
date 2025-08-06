@@ -141,37 +141,6 @@ class _PricingScreenState extends State<PricingScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          if (index != _currentIndex) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => _getScreenForIndex(index),
-              ),
-            );
-          }
-        },
-        backgroundColor: const Color(0xFF550101),
-        selectedItemColor: Colors.amber,
-        unselectedItemColor: Colors.white70,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
-        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal),
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.attach_money),
-            label: 'Pricing',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.engineering),
-            label: 'Labour',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-        ],
-      ),
     );
   }
 
