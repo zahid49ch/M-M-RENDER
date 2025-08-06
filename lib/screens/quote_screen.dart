@@ -295,7 +295,7 @@ class _QuotePageState extends State<QuotePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.pinkAccent[100],
+      backgroundColor: Color(0xff8e2626),
       appBar: AppBar(
         title: const Text('M&M Render Quote App'),
         backgroundColor: const Color(0xFF550101),
@@ -464,11 +464,11 @@ class _QuotePageState extends State<QuotePage> {
                               physics: const NeverScrollableScrollPhysics(),
                               gridDelegate:
                                   const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    mainAxisSpacing: 12,
-                                    crossAxisSpacing: 12,
-                                    childAspectRatio: 3,
-                                  ),
+                                crossAxisCount: 2,
+                                mainAxisSpacing: 12,
+                                crossAxisSpacing: 12,
+                                childAspectRatio: 3,
+                              ),
                               itemCount: _extraItems.length,
                               itemBuilder: (context, index) {
                                 final item = _extraItems[index];
@@ -565,34 +565,6 @@ class _QuotePageState extends State<QuotePage> {
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNavBar(),
-    );
-  }
-
-  BottomNavigationBar _buildBottomNavBar() {
-    return BottomNavigationBar(
-      currentIndex: _currentIndex,
-      onTap: (index) {
-        setState(() => _currentIndex = index);
-        _pageController.jumpToPage(index);
-        if (index == 0) {
-          _scrollController.jumpTo(0);
-        }
-      },
-      backgroundColor: const Color(0xFF550101),
-      selectedItemColor: Colors.amber,
-      unselectedItemColor: Colors.white70,
-      selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
-      type: BottomNavigationBarType.fixed,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.attach_money),
-          label: 'Pricing',
-        ),
-        BottomNavigationBarItem(icon: Icon(Icons.engineering), label: 'Labour'),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-      ],
     );
   }
 
