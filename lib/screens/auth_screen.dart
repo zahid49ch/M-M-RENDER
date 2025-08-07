@@ -44,14 +44,12 @@ class _AuthPageState extends State<AuthPage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            const SizedBox(height: 60),
+            const SizedBox(height: 20),
             // Logo
             Image.asset(
               'assets/logo.png',
-              height: 100,
-              color: Colors.amber,
+              fit: BoxFit.contain,
             ),
-            const SizedBox(height: 20),
             Text(
               'M & M RENDER',
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
@@ -60,7 +58,7 @@ class _AuthPageState extends State<AuthPage> {
                   ),
             ),
             const SizedBox(height: 40),
-            
+
             // Toggle between Login/Signup
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -88,7 +86,7 @@ class _AuthPageState extends State<AuthPage> {
               ],
             ),
             const SizedBox(height: 30),
-            
+
             // Auth Form
             Container(
               padding: const EdgeInsets.all(20),
@@ -105,7 +103,9 @@ class _AuthPageState extends State<AuthPage> {
                     if (!_isLogin) ...[
                       TextFormField(
                         controller: _usernameController,
-                        decoration: _buildInputDecoration('Username', Icons.person),
+                        style: const TextStyle(color: Colors.white),
+                        decoration:
+                            _buildInputDecoration('Username', Icons.person),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter username';
@@ -117,6 +117,7 @@ class _AuthPageState extends State<AuthPage> {
                     ],
                     TextFormField(
                       controller: _emailController,
+                      style: const TextStyle(color: Colors.white),
                       decoration: _buildInputDecoration('Email', Icons.email),
                       keyboardType: TextInputType.emailAddress,
                       validator: (value) {
@@ -133,7 +134,9 @@ class _AuthPageState extends State<AuthPage> {
                     if (!_isLogin) ...[
                       TextFormField(
                         controller: _phoneController,
-                        decoration: _buildInputDecoration('Phone Number', Icons.phone),
+                        style: const TextStyle(color: Colors.white),
+                        decoration:
+                            _buildInputDecoration('Phone Number', Icons.phone),
                         keyboardType: TextInputType.phone,
                         validator: (value) {
                           if (!_isLogin && (value == null || value.isEmpty)) {
@@ -146,6 +149,7 @@ class _AuthPageState extends State<AuthPage> {
                     ],
                     TextFormField(
                       controller: _passwordController,
+                      style: const TextStyle(color: Colors.white),
                       obscureText: true,
                       decoration: _buildInputDecoration('Password', Icons.lock),
                       validator: (value) {
@@ -195,8 +199,8 @@ class _AuthPageState extends State<AuthPage> {
                     TextButton(
                       onPressed: _switchAuthMode,
                       child: Text(
-                        _isLogin 
-                            ? 'Create new account' 
+                        _isLogin
+                            ? 'Create new account'
                             : 'Already have an account? Login',
                         style: const TextStyle(color: Colors.white70),
                       ),
