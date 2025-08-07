@@ -330,7 +330,7 @@ class _QuotePageState extends State<QuotePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Welcome, ${_customerNameController.text.isNotEmpty ? _customerNameController.text : 'User'}!',
+                        'Welcome Back ${_customerNameController.text.isNotEmpty ? _customerNameController.text : ''}',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
@@ -338,7 +338,7 @@ class _QuotePageState extends State<QuotePage> {
                         ),
                       ),
                       const Text(
-                        'Create a new quote for your client',
+                        'Create a new quote',
                         style: TextStyle(color: Colors.white70, fontSize: 14),
                       ),
                     ],
@@ -530,7 +530,7 @@ class _QuotePageState extends State<QuotePage> {
                           child: ElevatedButton(
                             onPressed: _navigateToMaterialBreakdown,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.amber,
+                              backgroundColor: Color(0xFFFB3B3B),
                               foregroundColor: Colors.black,
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
